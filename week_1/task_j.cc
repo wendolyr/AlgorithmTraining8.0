@@ -15,12 +15,15 @@ class MyList {
     Node(int v) : val(v) {}
   };
 
-  MyList(std::list<int>& other)
-      : fast_getter_(new std::unordered_map<int, std::shared_ptr<Node>>()) {
+  MyList(std::list<int>& other) {
+    auto shared =
+        std::make_shared<std::unordered_map<int, std::shared_ptr<Node>>>();
+    fast_getter_ = shared;
+
     std::shared_ptr<Node> prev = nullptr;
     for (int i : other) {
       std::shared_ptr<Node> new_node = std::make_shared<Node>(i);
-      (*fast_getter_)[++size_] = new_node;
+      (*fast_getter_.lock())[++size_] = new_node;
       if (!prev) {
         head_ = new_node;
         prev = new_node;
@@ -73,18 +76,18 @@ class MyList {
     is_sublist_ = true;
     fast_getter_ = other.fast_getter_;
     start_ = other.start_ + from - 1;
-    head_ = other.fast_getter_->at(start_);
-    tail_ = other.fast_getter_->at(start_ + to - from);
+    head_ = other.fast_getter_.lock()->at(start_);
+    tail_ = other.fast_getter_.lock()->at(start_ + to - from);
   }
 
   void Set(int i, int v) {
     int pos = start_ + i - 1;
-    (*fast_getter_)[pos]->val = v;
+    (*fast_getter_.lock())[pos] -> val = v;
   }
 
   int Get(int i) {
     int pos = start_ + i - 1;
-    return (*fast_getter_)[pos]->val;
+    return (*fast_getter_.lock())[pos] -> val;
   }
 
   void Add(int x) {
@@ -97,14 +100,14 @@ class MyList {
     new_node->prev = tail_;
     tail_ = new_node;
 
-    (*fast_getter_)[++size_] = new_node;
+    (*fast_getter_.lock())[++size_] = new_node;
   }
 
  private:
   std::shared_ptr<Node> head_ = nullptr;
   std::shared_ptr<Node> tail_ = nullptr;
   bool is_sublist_ = false;
-  std::shared_ptr<std::unordered_map<int, std::shared_ptr<Node>>> fast_getter_;
+  std::weak_ptr<std::unordered_map<int, std::shared_ptr<Node>>> fast_getter_;
   int start_ = 1;
   size_t size_ = 0;
 };
